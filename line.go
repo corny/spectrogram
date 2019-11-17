@@ -1,4 +1,4 @@
-package main
+package spectogram
 
 import (
 	"image/color"

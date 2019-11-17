@@ -1,35 +1,15 @@
-package main
+package spectogram
 
 import (
+	"image/color"
 	"log"
 	"strconv"
 )
 
-type Color128 struct {
-	R, G, B, A uint32
-}
-
-func (c Color128) RGBA() (r, g, b, a uint32) {
-	return c.R, c.G, c.B, c.A
-}
-
-func NewColor128(r, g, b, a uint32) Color128 {
-	return Color128{
-		R: r,
-		G: g,
-		B: b,
-		A: a,
-	}
-}
-
-func ParseColor(text string) Color128 {
+// ParseColor interpretates a string representation of a color as RGBA
+func ParseColor(text string) color.RGBA {
 	if text == "transparent" {
-		return Color128{
-			R: 0,
-			G: 0,
-			B: 0,
-			A: 0,
-		}
+		return color.RGBA{}
 	}
 	var err error
 	r, g, b, a := uint64(0), uint64(0), uint64(0), uint64(0xffffffff)
@@ -74,8 +54,6 @@ func ParseColor(text string) Color128 {
 		if err != nil {
 			log.Fatalf("invalid color %q", text)
 		}
-		a |= a << 8
-		a |= a << 16
 		fallthrough
 
 	case 6:
@@ -83,30 +61,25 @@ func ParseColor(text string) Color128 {
 		if err != nil {
 			log.Fatalf("invalid color %q", text)
 		}
-		r |= r << 8
-		r |= r << 16
 
 		g, err = strconv.ParseUint(text[2:4], 16, 8)
 		if err != nil {
 			log.Fatalf("invalid color %q", text)
 		}
-		g |= g << 8
-		g |= g << 16
 
 		b, err = strconv.ParseUint(text[4:6], 16, 8)
 		if err != nil {
 			log.Fatalf("invalid color %q", text)
 		}
-		b |= b << 8
-		b |= b << 16
 
 	default:
 		log.Fatalf("invalid color %q", text)
 	}
-	return Color128{
-		R: uint32(r),
-		G: uint32(g),
-		B: uint32(b),
-		A: uint32(a),
+
+	return color.RGBA{
+		R: uint8(r),
+		G: uint8(g),
+		B: uint8(b),
+		A: uint8(a),
 	}
 }
