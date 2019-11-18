@@ -1,5 +1,7 @@
 # Spectrogram
 
+[![CircleCI](https://circleci.com/gh/corny/spectrogram.svg?style=shield)](https://circleci.com/gh/corny/spectrogram)
+
 Taking an audio signal (wav) and converting it into a spectrogram. Written in Go programming language.
 
 ![example](data/mediawen.png "example of spectrogram")
