@@ -33,7 +33,7 @@ func DrawFFT(img draw.Image, gr Gradient, samples []float64, bins int) {
 
 		for y := 0; y < bins; y++ {
 			r := cmplx.Abs(freqs[y])
-			img.Set(x, bins-y+bn.Min.Y, gr.ColorAt(r))
+			img.Set(x, y+bn.Min.Y, gr.ColorAt(r))
 		}
 	}
 }
