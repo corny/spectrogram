@@ -1,6 +1,8 @@
 package spectogram
 
 import (
+	"errors"
+	"fmt"
 	"io"
 	"os"
 
@@ -34,8 +36,11 @@ func ReadOgg(r *oggvorbis.Reader) ([]float64, error) {
 		n, err := r.Read(buffer)
 
 		if err != nil {
-			if err == io.EOF {
+			if errors.Is(err, io.EOF) {
 				err = nil
+			}
+			if errors.Is(err, io.ErrUnexpectedEOF) {
+				err = fmt.Errorf("read %d of %d samples: %w", read, r.Length(), err)
 			}
 			return samples, err
 		}
