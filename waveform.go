@@ -4,6 +4,7 @@ import (
 	"image/color"
 	"image/draw"
 	"math"
+	"math/cmplx"
 )
 
 type WaveformParams struct {
@@ -13,9 +14,10 @@ type WaveformParams struct {
 }
 
 type Line struct {
-	Min float64
-	Max float64
-	Avg float64
+	Min      float64
+	Max      float64
+	Avg      float64
+	Strength float64
 }
 
 const (
@@ -27,11 +29,14 @@ const (
 func DrawWaveform(params WaveformParams, img draw.Image, samples []float64) {
 	bn := img.Bounds()
 
-	var gmin, gmax, gabs float64
+	const bins = 32
+	sub := make([]float64, bins*2)
+
+	var gmax float64
 
 	// -------------------------------------------
 
-	middle := bn.Dy() / 2
+	height := bn.Dy()
 	lines := make([]Line, bn.Dx())
 
 	for i := 0; i < bn.Dx(); i++ {
@@ -49,40 +54,48 @@ func DrawWaveform(params WaveformParams, img draw.Image, samples []float64) {
 		lines[i].Min = min
 		lines[i].Max = max
 		lines[i].Avg = sum / float64(n1-n0)
+
+		// FFT
+		c := int(n0 + (n1-n0)/2)
+		for i := range sub {
+			s := 0.0
+			n := c - bins + i
+			if n >= 0 && n < len(samples) {
+				s = samples[n]
+			}
+
+			// Apply Hamming window
+			s *= 0.54 - 0.46*math.Cos(float64(i)*math.Pi*2/float64(len(sub)))
+			sub[i] = s
+		}
+
+		freqs := fft(sub)
+
+		for y := 0; y < bins/3; y++ {
+			lines[i].Strength += cmplx.Abs(freqs[y])
+		}
 	}
 
-	// Calculate the boundaries
-	if params.Draw&FlagDrawMax != 0 {
-		// use min/max as boundaries
-		for i := 0; i < len(samples); i++ {
-			gsmp := samples[i]
-			gmax = math.Max(gsmp, gmax)
-			gmin = math.Min(gsmp, gmin)
-		}
-		gabs = math.Max(math.Abs(gmin), math.Abs(gmax))
-	} else {
-		// use the average values as boundaries
-		for i := 0; i < len(lines); i++ {
-			gmax = math.Max(lines[i].Avg, gmax)
-		}
-		gmin = -gmax
+	// use the average values as boundaries
+	for i := 0; i < len(lines); i++ {
+		gmax = math.Max(lines[i].Avg, gmax)
 	}
+
+	gr := NewGradient()
+	gr.Append(
+		ParseColor("0000cc"),
+		ParseColor("00cc00"),
+		ParseColor("cc0000"),
+	)
 
 	for i := range lines {
 		line := &lines[i]
 
-		if params.Draw&FlagDrawMax != 0 {
-			s0 := int(mapRange(line.Min, -gabs, gabs, -float64(middle), float64(middle)))
-			s1 := int(mapRange(line.Max, -gabs, gabs, -float64(middle), float64(middle)))
-			if s0 != 0 || s1 != 0 {
-				drawLine(img, i, middle-s0, i, middle-s1, params.MaxColor)
-			}
-		}
-
 		if params.Draw&FlagDrawAvg != 0 {
-			val := int(mapRange(line.Avg, gmin, gmax, -float64(middle), float64(middle)))
+			val := int(mapRange(line.Avg, 0, gmax, 0, float64(height)))
 			if val != 0 {
-				drawLine(img, i, middle-val, i, middle+val, params.AvgColor)
+
+				drawLine(img, i, height-val, i, height, gr.ColorAt(line.Strength/15))
 			}
 		}
 	}

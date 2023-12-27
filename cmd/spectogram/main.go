@@ -14,11 +14,10 @@ import (
 )
 
 var (
-	width   = flag.Int("width", 1024, "set width")
-	height  = flag.Int("height", 256, "set height")
-	hideavg = flag.Bool("hideavg", false, "hide average")
-	out     = flag.String("out", "out.png", "set output filename")
-	bins    = flag.Int("bins", 256, "set freq bins")
+	width  = flag.Int("width", 512, "set width")
+	height = flag.Int("height", 64, "set height")
+	out    = flag.String("out", "out.png", "set output filename")
+	bins   = flag.Int("bins", 32, "set freq bins")
 
 	bgWaveform = flag.String("bgWaveform", "000", "set background color for the waveform")
 	bgFFT      = flag.String("bgFFT", "333", "set background color for FFT")
@@ -48,8 +47,7 @@ func main() {
 	if *height > 0 {
 		params := spectogram.WaveformParams{
 			AvgColor: spectogram.ParseColor(*avgColor),
-			MaxColor: spectogram.ParseColor(*maxColor),
-			Draw:     spectogram.FlagDrawAvg | spectogram.FlagDrawMax,
+			Draw:     spectogram.FlagDrawAvg,
 		}
 
 		sub := img.SubImage(image.Rect(0, 0, *width, *height)).(*image.RGBA)
@@ -61,10 +59,7 @@ func main() {
 		gr := spectogram.NewGradient()
 		gr.Append(
 			spectogram.ParseColor("000000"),
-			spectogram.ParseColor("380F6D"),
-			spectogram.ParseColor("B63679"),
-			spectogram.ParseColor("FD9A69"),
-			spectogram.ParseColor("FCF6B8"),
+			spectogram.ParseColor("FFFFFF"),
 		)
 
 		sub := img.SubImage(image.Rect(0, *height, *width, *height+*bins)).(*image.RGBA)
@@ -76,6 +71,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("savePng failed: %v", err)
 	}
+
 }
 
 func saveImage(img image.Image, fileName string) error {
